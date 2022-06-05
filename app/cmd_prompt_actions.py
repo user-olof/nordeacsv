@@ -199,7 +199,7 @@ class CommandPromptActions:
         args = self.parser.parse_args()
         self.file = os.path.abspath(args.file)
 
-    def _find_headers(self):
+    def find_headers(self):
         with open(self.file) as f:
             line = f.read()
 
@@ -215,9 +215,9 @@ class CommandPromptActions:
         with writer.readable_file(self.resource) as w:
             w.write(header.join(':').join(datatype).join('\n'))
 
-    def set_datatypes(self):
+    def set_datatypes(self) -> dict:
 
-        __headers__ = self._find_headers()
+        __headers__ = self.find_headers()
         if __headers__ is None:
             raise CommandPromptActionsException("No datatypes has been found")
 
@@ -232,14 +232,18 @@ class CommandPromptActions:
 
             self.write_to_resource_file(h, self.headers[h])
 
+        return self.headers
+
     def get_datatypes(self) -> dict:
         return self.headers
 
     def get_filepath(self) -> str:
         return self.file
 
-    def generated_file_status(self, status: str):
-        if status == "FINISHED":
+    def file_status(self, status: str):
+        if status == "LOADED":
+            print("File information is loaded into the CsvDataFrame")
+        elif status == "FINISHED":
             print("New file has been generated in the root folder")
         elif status == "NOT FOUND":
             print("No new file has been generated")

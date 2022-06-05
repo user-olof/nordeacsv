@@ -72,23 +72,6 @@ class CsvDataFrame:
         it = iter(sorted_by_header)
         for k, g in itertools.groupby(it, lambda x: x[key_index]):
 
-            # def validate(s: str, datatype: str, /):
-            #     if s == '':
-            #         if datatype == "float":
-            #             return float(0.0)
-            #         elif datatype == "int":
-            #             return int(0)
-            #         elif datatype == "str":
-            #             return ''
-            #     else:
-            #         if datatype == "float":
-            #             return float(s)
-            #         elif datatype == "int":
-            #             return int(s)
-            #         elif datatype == "str":
-            #             return s
-            #     return s
-
             def sum_of_nums(column, dt, i):
                 try:
                     # if dt[i] != "str":
@@ -144,43 +127,51 @@ class CsvFileOperator:
         # bootstrap CsvDataFrame
         content = []
         with file_path.open() as f:
-            h = f.readline()
-            h = re.sub(",", ".", h)
-            h = re.sub(";", ",", h)
-            headers = h.split(',')
-            for line in f.readlines():
-                line = re.sub(",", ".", line)
-                line = re.sub(";", ",", line)
-                # #remove spaces from e.g. " 125.5 "
-                # l = re.sub("\s[0-9]+\s", )
-                line = line.split(',')
-                # get data types
-                map_items = map(cls.__validate__, line, datatypes)
-                items = list(map_items)
+            try:
+                h = f.readline()
+                h = re.sub(",", ".", h)
+                h = re.sub(";", ",", h)
+                headers = h.split(',')
+                for line in f.readlines():
+                    line = re.sub(",", ".", line)
+                    line = re.sub(";", ",", line)
+                    # #remove spaces from e.g. " 125.5 "
+                    # l = re.sub("\s[0-9]+\s", )
+                    line = line.split(',')
+                    if isinstance(line, list) is False:
+                        raise CsvFileOperatorException("Line split did not execute successfully")
 
-                # content.append(line)
-                # content.append(items)
-                content = [items]
+                    # get data types
+                    map_items = map(cls.__validate__, line, datatypes)
+                    content = list(map_items)
+                    if len(content) == 0:
+                        raise CsvFileOperatorException("The list of validated data is empty")
+                    # content.append(line)
+                    # content.append(items)
+                    # content = [items]
+            except CsvFileOperatorException as ex:
+                print(ex)
         return CsvFileOperator(file_path, headers, content)
 
     @classmethod
-    def __validate__(cls, line, datatypes):
-        validated = []
-        for i, s in enumerate(line):
-            if datatypes[i] == "float":
-                validated[i] = (float(s), 0.0)[len(s) == 0]
-            elif datatypes[i] == "int":
-                validated[i] = (int(s), 0)[len(s) == 0]
-            else:
-                validated[i] = ''
+    def __validate__(cls, item, datatypes):
+
+
+        if datatypes == "float":
+            validated = (float(item), 0.0)[len(item) == 0]
+        elif datatypes == "int":
+            validated = (int(item), 0)[len(item) == 0]
+        else:
+            validated = ''
 
         return validated
 
-    def gen_new_csv(self):
+    def gen_new_csv(self, name: str):
+        # here we could check the name is valid
         abs_path = str(self.file_path.absolute())
         list = abs_path.split('\\')
         list.pop()
-        list.append("SUCCESS.csv")
+        list.append(name)
         csv_file = "\\".join(list)
         return csv_file
 
@@ -188,11 +179,21 @@ class CsvFileOperator:
         if os.path.isfile(designated_file):
             try:
                 os.remove(designated_file)
-            except FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), designated_file):
-                sys.exit(2)
+            except FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), designated_file) as ex:
+                print(ex)
+                raise ex
 
     def write_csv(self, designated_file, /):
-        with open(designated_file, 'w') as f:
+        try:
+            f = open(designated_file, 'w')
+        except FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), designated_file) as ex:
+            print(ex)
+            raise ex
+        except OSError as ex:
+            print("Could not open file")
+            raise ex
+
+        with f:
             f.write(self.frame.headers)
             for line in self.frame.content:
                 f.write(line)
@@ -215,20 +216,42 @@ class CsvFileOperator:
 
     def to_cash_flow_csv(self, key_name, designated_file, /):
         # guess the datatypes
-        self.frame.set_default_datatypes(self.file_path)
+        # self.frame.set_default_datatypes(self.file_path)
         self.frame.group_by_header(key_name)
         self.write_output_to_csv(designated_file)
 
     def write_output_to_csv(self, designated_file, /):
         try:
-            with open(designated_file, 'w') as f:
-                tmp = ','.join(self.frame.output.headers)
-                f.write(tmp)
-                for line in self.frame.output.content:
-                    tmp = ','.join(line)
-                    f.write(tmp + '\n')
-        except Exception as err:
-            print("Writing failed: ", err)
+            f = open(designated_file, 'w')
+        except FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), designated_file) as ex:
+            print(ex)
+            raise ex
+        except OSError as ex:
+            print("Could not open file")
+            raise ex
+
+        with f:
+            tmp = ','.join(self.frame.output.headers)
+            f.write(tmp)
+            for line in self.frame.output.content:
+                tmp = ','.join(line)
+                f.write(tmp + '\n')
+
+        if os.path.isfile(designated_file):
+            now = datetime.now()
+            current_time = now.strftime("%H:%M:%S")
+            self.status = "OUTPUT_GENERATED_" + current_time
+        else:
+            raise CsvFileOperatorException("File has not been generated successfully")
+
+        # with open(designated_file, 'w') as f:
+        #     tmp = ','.join(self.frame.output.headers)
+        #     f.write(tmp)
+        #     for line in self.frame.output.content:
+        #         tmp = ','.join(line)
+        #         f.write(tmp + '\n')
+        # except Exception as err:
+        #     print("Writing failed: ", err)
 
 
 def main():
@@ -238,13 +261,13 @@ def main():
     actions = CommandPromptActions.create("header.txt")
     actions.start()
     actions.set_csv()
-    actions.set_datatypes()
+    datatypes = actions.set_datatypes()
 
-    datatypes = actions.get_datatypes()
+    # datatypes = actions.get_datatypes()
     file_as_string = actions.get_filepath()
 
     op = CsvFileOperator.bootstrap(file_as_string, datatypes)
-    csv = op.gen_new_csv()
+    csv = op.gen_new_csv("SUCCESS.csv")
     op.delete_old_csv(csv)
     op.write_csv(csv)
 
