@@ -1,0 +1,9 @@
+setup.cfg
+setup.py
+app/__init__.py
+app/cmd_prompt_actions.py
+app/nordeacsv.py
+local_nordeacsv.egg-info/PKG-INFO
+local_nordeacsv.egg-info/SOURCES.txt
+local_nordeacsv.egg-info/dependency_links.txt
+local_nordeacsv.egg-info/top_level.txt

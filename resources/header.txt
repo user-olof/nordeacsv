@@ -1,0 +1,15 @@
+
+# ---
+# NAME:
+# test.csv
+# HEADERS:
+# col1:str
+# col2:float
+# col3:int
+# ---
+# NAME:
+# test.csv
+# HEADERS:
+# col1:str
+# col2:float
+# col3:int
