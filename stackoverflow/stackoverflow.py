@@ -9,3 +9,5 @@ legend_names = dict(d.keys())
 plt.legend(legend_names)
 plt.show(block=True)
 
+
+
