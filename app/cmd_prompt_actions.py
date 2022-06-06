@@ -199,6 +199,12 @@ class CommandPromptActions:
         args = self.parser.parse_args()
         self.file = os.path.abspath(args.file)
 
+    def write_to_resource_file(self, header: str, datatype: str):
+        # open the file in append mode to begin writing at EOF
+        writer = Reader.create('a')
+        with writer.readable_file(self.resource) as w:
+            w.write(header.join(':').join(datatype).join('\n'))
+
     def find_headers(self):
         with open(self.file) as f:
             line = f.read()
@@ -208,12 +214,6 @@ class CommandPromptActions:
             res = splitlines[0].split(';')
             return res
         return None
-
-    def write_to_resource_file(self, header: str, datatype: str):
-        # open the file in append mode to begin writing at EOF
-        writer = Reader.create('a')
-        with writer.readable_file(self.resource) as w:
-            w.write(header.join(':').join(datatype).join('\n'))
 
     def set_datatypes(self) -> dict:
 
@@ -240,15 +240,18 @@ class CommandPromptActions:
     def get_filepath(self) -> str:
         return self.file
 
-    def file_status(self, status: str):
-        if status == "LOADED":
-            print("File information is loaded into the CsvDataFrame")
-        elif status == "FINISHED":
-            print("New file has been generated in the root folder")
-        elif status == "NOT FOUND":
-            print("No new file has been generated")
-        elif status == "OPEN":
-            print("Source file is open. Please close and try again")
+    def print(self, string: str, /):
+        print(string)
+
+    # def file_status(self, status: str):
+    #     if status == :
+    #         print("File information is loaded into the CsvDataFrame")
+    #     elif status == "GENERATED":
+    #         print("New file has been generated in the root folder")
+    #     elif status == "NOT FOUND":
+    #         print("No new file has been generated")
+    #     elif status == "OPEN":
+    #         print("Source file is open. Please close and try again")
 
     def stop(self):
         input("New file has been generated in the root folder. Press Enter to exit ...")

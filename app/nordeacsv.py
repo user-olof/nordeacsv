@@ -1,7 +1,8 @@
 import argparse
-import datetime
+from datetime import datetime
 
 import itertools
+from enum import Enum
 from pathlib import Path
 
 import errno
@@ -13,6 +14,13 @@ import numpy
 from dateutil import parser
 
 from app.cmd_prompt_actions import CommandPromptActions
+
+
+class FileStatus(Enum):
+    NOT_FOUND = 0
+    LOADED = 1
+    GENERATED = 2
+    OUTPUT_GENERATED = 3
 
 
 class AggDataConversionError(ValueError):
@@ -113,7 +121,7 @@ class CsvFileOperator:
     def __init__(self, file_path: Path, header: [], content: [[]], /):
         self.file_path = file_path
         self.frame = CsvDataFrame.bootstrap(header, content)
-        self.status = "LOADED"
+        self.status = FileStatus.LOADED
 
     @classmethod
     def bootstrap(cls, file_as_string: str, datatypes: dict, /):
@@ -125,37 +133,33 @@ class CsvFileOperator:
         file_path = Path(file_as_string)
 
         # bootstrap CsvDataFrame
-        content = []
         with file_path.open() as f:
             try:
                 h = f.readline()
-                h = re.sub(",", ".", h)
-                h = re.sub(";", ",", h)
+                h = char_replace(h, ',', '.')
+                h = char_replace(h, ';', ',')
                 headers = h.split(',')
                 for line in f.readlines():
-                    line = re.sub(",", ".", line)
-                    line = re.sub(";", ",", line)
+                    line = char_replace(line, ',', '.')
+                    line = char_replace(line, ';', ',')
                     # #remove spaces from e.g. " 125.5 "
                     # l = re.sub("\s[0-9]+\s", )
-                    line = line.split(',')
-                    if isinstance(line, list) is False:
-                        raise CsvFileOperatorException("Line split did not execute successfully")
+                    line = line_split(line, ',')
 
                     # get data types
                     map_items = map(cls.__validate__, line, datatypes)
                     content = list(map_items)
                     if len(content) == 0:
                         raise CsvFileOperatorException("The list of validated data is empty")
-                    # content.append(line)
-                    # content.append(items)
-                    # content = [items]
             except CsvFileOperatorException as ex:
                 print(ex)
         return CsvFileOperator(file_path, headers, content)
 
+
+
+
     @classmethod
     def __validate__(cls, item, datatypes):
-
 
         if datatypes == "float":
             validated = (float(item), 0.0)[len(item) == 0]
@@ -199,8 +203,9 @@ class CsvFileOperator:
                 f.write(line)
 
         if os.path.isfile(designated_file):
-            self.status = "GENERATED"
+            self.status = FileStatus.GENERATED
         else:
+            self.status = FileStatus.NOT_FOUND
             raise CsvFileOperatorException("File has not been generated successfully")
 
     # def to_base_csv(self):
@@ -238,12 +243,23 @@ class CsvFileOperator:
                 f.write(tmp + '\n')
 
         if os.path.isfile(designated_file):
-            now = datetime.now()
-            current_time = now.strftime("%H:%M:%S")
-            self.status = "OUTPUT_GENERATED_" + current_time
+            # now = datetime.now()
+            # current_time = now.strftime("%H:%M:%S")
+            self.status = FileStatus.OUTPUT_GENERATED
         else:
+            self.status = FileStatus.NOT_FOUND
             raise CsvFileOperatorException("File has not been generated successfully")
 
+    def file_status(self) -> str:
+        if self.status == FileStatus.LOADED:
+            msg = "File information is loaded into the CsvDataFrame"
+        elif self.status == FileStatus.GENERATED:
+            msg = "New file has been generated in the root folder"
+        elif self.status == FileStatus.NOT_FOUND:
+            msg = "No new file has been generated"
+        elif self.status == FileStatus.OUTPUT_GENERATED:
+            msg = "Results generated from aggregation method has been written to new file in the root folder"
+        return msg
         # with open(designated_file, 'w') as f:
         #     tmp = ','.join(self.frame.output.headers)
         #     f.write(tmp)
@@ -252,6 +268,28 @@ class CsvFileOperator:
         #         f.write(tmp + '\n')
         # except Exception as err:
         #     print("Writing failed: ", err)
+
+
+def char_replace(line: str, old_char: str, new_char: str):
+    # line = re.sub(",", ".", line)
+    try:
+        line = re.sub(old_char, new_char, line)
+        return line
+    except CsvFileOperatorException("Substituting character: " + old_char + " to: " + new_char + " has failed") as ex:
+        raise ex
+
+
+def line_split(line: str, separator: str):
+    try:
+        line = line.split(separator)
+        if len(line) == 0:
+            raise CsvFileOperatorException("Line split generated an empty list")
+        return line
+    except CsvFileOperatorException("Line split has failed for separator: " + separator) as ex:
+        raise ex
+
+    # line = line.split(',')
+
 
 
 def main():
@@ -267,11 +305,16 @@ def main():
     file_as_string = actions.get_filepath()
 
     op = CsvFileOperator.bootstrap(file_as_string, datatypes)
+    actions.print(op.file_status())
+
     csv = op.gen_new_csv("SUCCESS.csv")
     op.delete_old_csv(csv)
+
     op.write_csv(csv)
+    actions.print(op.file_status())
 
     op.to_cash_flow_csv("Namn", csv)
+    actions.print(op.file_status())
 
     actions.stop()
 
