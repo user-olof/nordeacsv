@@ -53,5 +53,5 @@ def test_find_headers():
     fullpath = r'C:\Users\Olof\PycharmProjects\NordeaCsv\nordea.csv'
     actions = CommandPromptActions.create("header.txt")
     actions.file = fullpath
-    headers = actions.find
+    headers = actions.find_headers()
     assert len(headers) > 0

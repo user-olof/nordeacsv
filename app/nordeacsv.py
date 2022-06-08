@@ -20,7 +20,6 @@ class FileStatus(Enum):
     NOT_FOUND = 0
     LOADED = 1
     GENERATED = 2
-    OUTPUT_GENERATED = 3
 
 
 class AggDataConversionError(ValueError):
@@ -41,9 +40,11 @@ class Output:
 
 class CsvDataFrame:
     def __init__(self, headers, content, datatypes, res=Output(), /):
+        # used for calculations
         self.headers = headers
         self.content = content
         self.datatypes = datatypes
+        # used for printing
         self.output = res
 
     @classmethod
@@ -155,16 +156,19 @@ class CsvFileOperator:
                 print(ex)
         return CsvFileOperator(file_path, headers, content)
 
-
-
-
     @classmethod
-    def __validate__(cls, item, datatypes):
+    def __validate__(cls, item: str, datatype: str):
 
-        if datatypes == "float":
-            validated = (float(item), 0.0)[len(item) == 0]
-        elif datatypes == "int":
-            validated = (int(item), 0)[len(item) == 0]
+        if datatype == "float":
+            if len(item) == 0:
+                validated = 0.0
+            else:
+                validated = float(item)
+        elif datatype == "int":
+            if len(item) == 0:
+                validated = 0
+            else:
+                validated = int(item)
         else:
             validated = ''
 
@@ -184,29 +188,28 @@ class CsvFileOperator:
             try:
                 os.remove(designated_file)
             except FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), designated_file) as ex:
-                print(ex)
                 raise ex
 
-    def write_csv(self, designated_file, /):
-        try:
-            f = open(designated_file, 'w')
-        except FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), designated_file) as ex:
-            print(ex)
-            raise ex
-        except OSError as ex:
-            print("Could not open file")
-            raise ex
-
-        with f:
-            f.write(self.frame.headers)
-            for line in self.frame.content:
-                f.write(line)
-
-        if os.path.isfile(designated_file):
-            self.status = FileStatus.GENERATED
-        else:
-            self.status = FileStatus.NOT_FOUND
-            raise CsvFileOperatorException("File has not been generated successfully")
+    # def write_csv(self, designated_file, /):
+    #     try:
+    #         f = open(designated_file, 'w')
+    #     except FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), designated_file) as ex:
+    #         raise ex
+    #
+    #     except OSError as ex:
+    #         print("Could not open file")
+    #         raise ex
+    #
+    #     with f:
+    #         f.write(self.frame.output.headers)
+    #         for line in self.frame.output.content:
+    #             f.write(line)
+    #
+    #     if os.path.isfile(designated_file):
+    #         self.status = FileStatus.GENERATED
+    #     else:
+    #         self.status = FileStatus.NOT_FOUND
+    #         raise CsvFileOperatorException("File has not been generated successfully")
 
     # def to_base_csv(self):
     #     # generate doc
@@ -220,32 +223,38 @@ class CsvFileOperator:
     #     return content
 
     def to_cash_flow_csv(self, key_name, designated_file, /):
-        # guess the datatypes
-        # self.frame.set_default_datatypes(self.file_path)
         self.frame.group_by_header(key_name)
         self.write_output_to_csv(designated_file)
+
+    # def __get_str__(self, _data, /):
+    #     try:
+    #         if type(_data) is list:
+    #             tmp = ','.join(_data)
+    #         elif type(_data) is str:
+    #             tmp = _data
+    #         return tmp
+    #     except TypeError("Failed the checks for list or string") as ex:
+    #         raise ex
 
     def write_output_to_csv(self, designated_file, /):
         try:
             f = open(designated_file, 'w')
         except FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), designated_file) as ex:
-            print(ex)
             raise ex
-        except OSError as ex:
-            print("Could not open file")
+        except OSError("Could not open file") as ex:
             raise ex
 
         with f:
-            tmp = ','.join(self.frame.output.headers)
-            f.write(tmp)
-            for line in self.frame.output.content:
-                tmp = ','.join(line)
+            if type(self.frame.output.headers) is list:
+                tmp = ','.join(self.frame.output.headers)
                 f.write(tmp + '\n')
+            if type(self.frame.output.content) is list:
+                for line in self.frame.output.content:
+                    tmp = ','.join(line)
+                    f.write(tmp + '\n')
 
         if os.path.isfile(designated_file):
-            # now = datetime.now()
-            # current_time = now.strftime("%H:%M:%S")
-            self.status = FileStatus.OUTPUT_GENERATED
+            self.status = FileStatus.GENERATED
         else:
             self.status = FileStatus.NOT_FOUND
             raise CsvFileOperatorException("File has not been generated successfully")
@@ -257,8 +266,8 @@ class CsvFileOperator:
             msg = "New file has been generated in the root folder"
         elif self.status == FileStatus.NOT_FOUND:
             msg = "No new file has been generated"
-        elif self.status == FileStatus.OUTPUT_GENERATED:
-            msg = "Results generated from aggregation method has been written to new file in the root folder"
+        # elif self.status == FileStatus.OUTPUT_GENERATED:
+        #     msg = "Results generated from aggregation method has been written to new file in the root folder"
         return msg
         # with open(designated_file, 'w') as f:
         #     tmp = ','.join(self.frame.output.headers)
@@ -289,7 +298,6 @@ def line_split(line: str, separator: str):
         raise ex
 
     # line = line.split(',')
-
 
 
 def main():
