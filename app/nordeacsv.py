@@ -1,4 +1,5 @@
 import argparse
+
 from datetime import datetime
 
 import itertools
@@ -27,9 +28,24 @@ class AggDataConversionError(ValueError):
 
 
 class Output:
-    def __init__(self, columns=None, data=None, /):
-        self.headers = columns
-        self.content = data
+    def __init__(self, headers=[], content=[[]], /):
+        self.headers = headers
+        self.content = content
+
+    @classmethod
+    def create(cls, headers, group: {list}, key_index: int, /):
+        # tmp_headers = []
+        tmp_content = [[]]
+        for k in group.keys():
+            # insert name in key index
+            group[k][key_index] = k
+            # tmp_headers.append(k)
+            # add list to content
+            tmp_content.append(group[k])
+
+
+        return Output(headers, tmp_content)
+
     #
     # def headers(self):
     #     return self.columns
@@ -57,19 +73,19 @@ class CsvDataFrame:
         return CsvDataFrame(header, content, datatypes)
 
     # --- NOT USED NOW ---
-    def set_default_datatypes(self, file_path: Path):
-        # "DEPÅLIKVIDKONTO" "PLUSGIROKONTO"
-        # "Bokföringsdag, Belopp ,Avsändare,Mottagare,Namn,Rubrik,Meddelande,Egna anteckningar,Saldo,Valuta"
-        # "str, float, str, str, str, str, str, str, float, str"
-        # if filename = use regex exp
-        if re.match("DEPÅLIKVIDKONTO*", file_path.name) is not None:
-            self.datatypes = ["str", "float", "str", "str", "str", "str", "str", "str", "float", "str"]
-        elif re.match("PLUSGIROKONTO*", file_path.name) is not None:
-            self.datatypes = ["str", "float", "str", "str", "str", "str", "str", "str", "float", "str"]
-        elif re.match("nordea*", file_path.name) is not None:
-            self.datatypes = ["str", "float", "str", "str", "str", "str", "str", "str", "float", "str"]
-        elif self.datatypes is None:
-            self.datatypes = ["str"] * len(self.headers)
+    # def set_default_datatypes(self, file_path: Path):
+    #     # "DEPÅLIKVIDKONTO" "PLUSGIROKONTO"
+    #     # "Bokföringsdag, Belopp ,Avsändare,Mottagare,Namn,Rubrik,Meddelande,Egna anteckningar,Saldo,Valuta"
+    #     # "str, float, str, str, str, str, str, str, float, str"
+    #     # if filename = use regex exp
+    #     if re.match("DEPÅLIKVIDKONTO*", file_path.name) is not None:
+    #         self.datatypes = ["str", "float", "str", "str", "str", "str", "str", "str", "float", "str"]
+    #     elif re.match("PLUSGIROKONTO*", file_path.name) is not None:
+    #         self.datatypes = ["str", "float", "str", "str", "str", "str", "str", "str", "float", "str"]
+    #     elif re.match("nordea*", file_path.name) is not None:
+    #         self.datatypes = ["str", "float", "str", "str", "str", "str", "str", "str", "float", "str"]
+    #     elif self.datatypes is None:
+    #         self.datatypes = ["str"] * len(self.headers)
 
     def group_by_header(self, key_name, /):
         # key_name = "Namn"
@@ -97,7 +113,7 @@ class CsvDataFrame:
 
 
                 except AggDataConversionError as ex:
-                    print(ex)
+                    raise ex
 
             def generate_sum(group):
                 index = 0
@@ -109,8 +125,8 @@ class CsvDataFrame:
             for j in generate_sum(g):
                 group_by_header[k].append(next(j))
 
-        self.output = Output(group_by_header.keys(), group_by_header.values())
-
+        # self.output = Output(group_by_header.keys(), group_by_header.values())
+        self.output = Output.create(self.headers, group_by_header, key_index)
         return group_by_header
 
 
@@ -134,15 +150,17 @@ class CsvFileOperator:
         file_path = Path(file_as_string)
 
         # bootstrap CsvDataFrame
-        with file_path.open() as f:
+        with file_path.open(encoding='utf-8-sig') as f:
             try:
                 h = f.readline()
                 h = char_replace(h, ',', '.')
                 h = char_replace(h, ';', ',')
+                h = char_replace(h, '\n', '')
                 headers = h.split(',')
                 for line in f.readlines():
                     line = char_replace(line, ',', '.')
                     line = char_replace(line, ';', ',')
+                    line = char_replace(line, '\n', '')
                     # #remove spaces from e.g. " 125.5 "
                     # l = re.sub("\s[0-9]+\s", )
                     line = line_split(line, ',')
@@ -246,12 +264,14 @@ class CsvFileOperator:
 
         with f:
             if type(self.frame.output.headers) is list:
-                tmp = ','.join(self.frame.output.headers)
-                f.write(tmp + '\n')
+                if len(self.frame.output.headers) > 0:
+                    tmp = ','.join(str(e) for e in self.frame.output.headers)
+                    f.write(tmp + '\n')
             if type(self.frame.output.content) is list:
                 for line in self.frame.output.content:
-                    tmp = ','.join(line)
-                    f.write(tmp + '\n')
+                    if len(line) > 0:
+                        tmp = ','.join(str(e) for e in line)
+                        f.write(tmp + '\n')
 
         if os.path.isfile(designated_file):
             self.status = FileStatus.GENERATED

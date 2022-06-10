@@ -80,13 +80,8 @@ def test_validate(csvfileoperator):
     assert type(val) is float
 
 
-def test_to_base_csv(csvfileoperator):
-    d = csvfileoperator.to_base_csv()
-    assert len(d) > 0
-
-
 def test_gen_new_csv(csvfileoperator):
-    f = csvfileoperator.gen_new_csv()
+    f = csvfileoperator.gen_new_csv("new_empty.csv")
     assert len(f) > 0
 
 
@@ -119,7 +114,10 @@ def test_write_output_to_csv_2(csvfileoperator):
 
 
 # def test_to_cash_flow_csv(headers, content, datatypes):
-def test_to_cash_flow_csv(csvfileoperator):
+def test_to_cash_flow_csv(csvfileoperator, content, headers, datatypes):
+    csvfileoperator.frame.content = content
+    csvfileoperator.frame.headers = headers
+    csvfileoperator.frame.datatypes = datatypes
     designated_file = r"C:\Users\Olof\PycharmProjects\NordeaCsv\test_nordeacsv\cash_flow.csv"
     csvfileoperator.to_cash_flow_csv("Namn", designated_file)
     file_stat = os.stat(designated_file)
