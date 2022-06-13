@@ -22,14 +22,49 @@ def clear_files(file: str):
         pass
 
 
-@pytest.fixture(autouse=True)
-def remove_test_write_csv():
-    clear_files(r"C:\Users\Olof\PycharmProjects\NordeaCsv\test_nordeacsv\test_write.csv")
+@pytest.fixture
+def resources_test_csv():
+    cwd = os.getcwd()
+    fullpath = os.path.join(cwd, 'resources', 'test.csv')
+    return fullpath
+
+
+@pytest.fixture
+def resources_not_here_csv():
+    cwd = os.getcwd()
+    fullpath = os.path.join(cwd, 'resources', 'not_here.csv')
+    return fullpath
+
+
+@pytest.fixture
+def resources_test_write_csv():
+    cwd = os.getcwd()
+    fullpath = os.path.join(cwd, 'test_write.csv')
+    return fullpath
+
+
+@pytest.fixture
+def resources_cash_flow_csv():
+    cwd = os.getcwd()
+    fullpath = os.path.join(cwd, 'cash_flow.csv')
+    return fullpath
+
+
+@pytest.fixture
+def cwd():
+    return os.getcwd()
 
 
 @pytest.fixture(autouse=True)
-def remove_cash_flow_csv():
-    clear_files(r"C:\Users\Olof\PycharmProjects\NordeaCsv\test_nordeacsv\cash_flow.csv")
+def remove_test_write_csv(resources_test_write_csv):
+    clear_files(resources_test_write_csv)
+    # clear_files(r"C:\Users\Olof\PycharmProjects\NordeaCsv\test_nordeacsv\test_write.csv")
+
+
+@pytest.fixture(autouse=True)
+def remove_cash_flow_csv(resources_test_write_csv):
+    clear_files(resources_test_write_csv)
+    # clear_files(r"C:\Users\Olof\PycharmProjects\NordeaCsv\test_nordeacsv\cash_flow.csv")
 
 
 @pytest.fixture
@@ -62,14 +97,13 @@ def test_datatypes():
 
 
 @pytest.fixture
-def csvfileoperator(test_datatypes):
-    return CsvFileOperator.bootstrap(r"C:\Users\Olof\PycharmProjects\NordeaCsv\test_nordeacsv\resources\test.csv", \
-                                     test_datatypes)
+def csvfileoperator(test_datatypes, resources_test_csv):
+    return CsvFileOperator.bootstrap(resources_test_csv, test_datatypes)
 
 
-def test_bootstrap(test_datatypes):
-    op = CsvFileOperator.bootstrap(r"C:\Users\Olof\PycharmProjects\NordeaCsv\test_nordeacsv\resources\test.csv", \
-                                   test_datatypes)
+@pytest.fixture
+def test_bootstrap(test_datatypes, resources_test_csv):
+    op = CsvFileOperator.bootstrap(resources_test_csv, test_datatypes)
     assert type(op) is CsvFileOperator
 
 
@@ -85,41 +119,41 @@ def test_gen_new_csv(csvfileoperator):
     assert len(f) > 0
 
 
-def test_delete_old_csv(csvfileoperator):
-    csv_file = r"C:\Users\Olof\PycharmProjects\NordeaCsv\not_here.csv"
-    csvfileoperator.delete_old_csv(csv_file)
-    assert os.path.exists(csv_file) is False
+def test_delete_old_csv(csvfileoperator, resources_not_here_csv):
+    csvfileoperator.delete_old_csv(resources_not_here_csv)
+    assert hasattr(resources_not_here_csv, 'delete') is False
 
 
 def test_delete_old_csv_2(csvfileoperator):
     with tempfile.NamedTemporaryFile() as csv_file:
+        check_path = str(csv_file)
         csv_file.write(b'Hello World')
         csvfileoperator.delete_old_csv(csv_file.name)
-        assert os.path.exists(csv_file.name) is False
+    assert os.path.exists(check_path) is False
 
 
-def test_write_output_to_csv(csvfileoperator):
-    csv_file = r"C:\Users\Olof\PycharmProjects\NordeaCsv\test_nordeacsv\test_write.csv"
+def test_write_output_to_csv(csvfileoperator, resources_test_write_csv):
+    # csv_file = r"C:\Users\Olof\PycharmProjects\NordeaCsv\test_nordeacsv\test_write.csv"
     csvfileoperator.frame.output.content = [["xxx", "aaa"], ["yyy", "bbb"]]
-    csvfileoperator.write_output_to_csv(csv_file)
-    assert os.path.exists(csv_file)
+    csvfileoperator.write_output_to_csv(resources_test_write_csv)
+    assert os.path.exists(resources_test_write_csv)
 
 
-def test_write_output_to_csv_2(csvfileoperator):
-    csv_file = r"C:\Users\Olof\PycharmProjects\NordeaCsv\test_nordeacsv\test_write.csv"
+def test_write_output_to_csv_2(csvfileoperator, resources_test_write_csv):
+    # csv_file = r"C:\Users\Olof\PycharmProjects\NordeaCsv\test_nordeacsv\test_write.csv"
     csvfileoperator.frame.output.headers = ["header1", "header2"]
     csvfileoperator.frame.output.content = [["xxx", "aaa"], ["yyy", "bbb"]]
-    csvfileoperator.write_output_to_csv(csv_file)
-    assert os.path.exists(csv_file)
+    csvfileoperator.write_output_to_csv(resources_test_write_csv)
+    assert os.path.exists(resources_test_write_csv)
 
 
 # def test_to_cash_flow_csv(headers, content, datatypes):
-def test_to_cash_flow_csv(csvfileoperator, content, headers, datatypes):
+def test_to_cash_flow_csv(csvfileoperator, content, headers, datatypes, resources_cash_flow_csv):
     csvfileoperator.frame.content = content
     csvfileoperator.frame.headers = headers
     csvfileoperator.frame.datatypes = datatypes
-    designated_file = r"C:\Users\Olof\PycharmProjects\NordeaCsv\test_nordeacsv\cash_flow.csv"
-    csvfileoperator.to_cash_flow_csv("Namn", designated_file)
-    file_stat = os.stat(designated_file)
+    # designated_file = r"C:\Users\Olof\PycharmProjects\NordeaCsv\test_nordeacsv\cash_flow.csv"
+    csvfileoperator.to_cash_flow_csv("Namn", resources_cash_flow_csv)
+    file_stat = os.stat(resources_cash_flow_csv)
     size = file_stat.st_size
-    assert os.path.exists(designated_file) and size > 0
+    assert os.path.exists(resources_cash_flow_csv) and size > 0
