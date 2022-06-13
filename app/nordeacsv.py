@@ -1,6 +1,6 @@
 import argparse
 
-from datetime import datetime
+
 
 import itertools
 from enum import Enum
