@@ -126,9 +126,10 @@ def test_delete_old_csv(csvfileoperator, resources_not_here_csv):
 
 def test_delete_old_csv_2(csvfileoperator):
     with tempfile.NamedTemporaryFile() as csv_file:
+        check_path = str(csv_file)
         csv_file.write(b'Hello World')
         csvfileoperator.delete_old_csv(csv_file.name)
-        assert csv_file.delete is True
+    assert os.path.exists(check_path) is False
 
 
 def test_write_output_to_csv(csvfileoperator, resources_test_write_csv):
