@@ -121,14 +121,14 @@ def test_gen_new_csv(csvfileoperator):
 
 def test_delete_old_csv(csvfileoperator, resources_not_here_csv):
     csvfileoperator.delete_old_csv(resources_not_here_csv)
-    assert os.path.exists(resources_not_here_csv) is False
+    assert hasattr(resources_not_here_csv, 'delete') is False
 
 
 def test_delete_old_csv_2(csvfileoperator):
     with tempfile.NamedTemporaryFile() as csv_file:
         csv_file.write(b'Hello World')
         csvfileoperator.delete_old_csv(csv_file.name)
-        assert os.path.exists(csv_file.name) is False
+        assert csv_file.delete is True
 
 
 def test_write_output_to_csv(csvfileoperator, resources_test_write_csv):
