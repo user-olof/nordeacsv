@@ -12,7 +12,7 @@ import os
 import re
 
 import sys
-import numpy
+
 from dateutil import parser
 
 from app.cmd_prompt_actions import CommandPromptActions
