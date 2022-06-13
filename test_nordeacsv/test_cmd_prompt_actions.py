@@ -50,7 +50,9 @@ def test_get_resource_reading(resource, storage):
 
 
 def test_find_headers():
-    fullpath = r'C:\Users\Olof\PycharmProjects\NordeaCsv\nordea.csv'
+    cwd = os.getcwd()
+    fullpath = os.path.join(cwd, 'nordea.csv')
+    # fullpath = r'C:\Users\Olof\PycharmProjects\NordeaCsv\nordea.csv'
     actions = CommandPromptActions.create("header.txt")
     actions.file = fullpath
     headers = actions.find_headers()
