@@ -5,11 +5,7 @@ on:
       - dev
 jobs:
   build:
-    runs-on: windows-latest
-    defaults:
-      run:
-        shell: cmd
-        working-directory: nordeacsv
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python
