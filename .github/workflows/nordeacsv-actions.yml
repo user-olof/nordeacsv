@@ -9,7 +9,7 @@ jobs:
     defaults:
       run:
         shell: cmd
-        working-directory: test_nordeacsv
+        working-directory: nordeacsv
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python
