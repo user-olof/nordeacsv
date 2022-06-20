@@ -1,10 +1,6 @@
 import itertools
-
 import pytest
-import numpy as np
-from dateutil.parser import parser
-
-from src.nordeacsv.nordeacsv import CsvDataFrame, CsvFileOperator
+from src.nordeacsv.nordeacsv import CsvDataFrame
 
 
 @pytest.fixture

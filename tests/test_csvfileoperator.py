@@ -1,7 +1,5 @@
 import os
 import tempfile
-import time
-
 from src.nordeacsv.nordeacsv import CsvFileOperator
 import pytest
 from pathlib import Path
