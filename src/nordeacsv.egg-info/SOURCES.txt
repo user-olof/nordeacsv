@@ -1,0 +1,12 @@
+LICENSE
+README.md
+pyproject.toml
+setup.cfg
+setup.py
+src/nordeacsv/__init__.py
+src/nordeacsv/cmd_prompt_actions.py
+src/nordeacsv/nordeacsv.py
+src/nordeacsv.egg-info/PKG-INFO
+src/nordeacsv.egg-info/SOURCES.txt
+src/nordeacsv.egg-info/dependency_links.txt
+src/nordeacsv.egg-info/top_level.txt
