@@ -6,16 +6,12 @@
 import itertools
 from enum import Enum
 from pathlib import Path
-
 import errno
 import os
 import re
-
 import sys
+from src.actions.cmd_prompt_actions import CommandPromptActions
 
-from dateutil import parser
-
-from app.cmd_prompt_actions import CommandPromptActions
 
 
 class FileStatus(Enum):

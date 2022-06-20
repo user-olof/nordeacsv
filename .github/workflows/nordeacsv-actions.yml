@@ -3,9 +3,6 @@ on:
   push:
     branches:
       - dev
-defaults:
-  run:
-    working-directory: nordeacsv
 jobs:
   build:
     runs-on: ubuntu-latest
