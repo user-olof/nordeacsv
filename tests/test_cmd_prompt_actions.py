@@ -1,6 +1,6 @@
 import os
 import pytest
-from src.nordeacsv.cmd_prompt_actions import Reader, get_resource_reading, DataTypeStorage, DataTypeStorageException, \
+from src.actions.cmd_prompt_actions import Reader, get_resource_reading, DataTypeStorage, DataTypeStorageException, \
     CommandPromptActions
 
 
