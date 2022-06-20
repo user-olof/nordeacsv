@@ -2,7 +2,7 @@ import os
 import tempfile
 import time
 
-from app.nordeacsv import CsvFileOperator
+from src.nordeacsv.nordeacsv import CsvFileOperator
 import pytest
 from pathlib import Path
 

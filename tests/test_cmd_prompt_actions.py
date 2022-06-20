@@ -3,7 +3,7 @@ import tempfile
 
 import pytest
 
-from app.cmd_prompt_actions import Reader, get_resource_reading, DataTypeStorage, DataTypeStorageException, \
+from src.nordeacsv.cmd_prompt_actions import Reader, get_resource_reading, DataTypeStorage, DataTypeStorageException, \
     CommandPromptActions
 
 
