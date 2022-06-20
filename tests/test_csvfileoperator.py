@@ -1,6 +1,6 @@
 import os
 import tempfile
-from src.nordeacsv.nordeacsv import CsvFileOperator
+from src.nordeacsv import CsvFileOperator
 import pytest
 from pathlib import Path
 

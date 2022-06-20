@@ -1,6 +1,6 @@
 import itertools
 import pytest
-from src.nordeacsv.nordeacsv import CsvDataFrame
+from src.nordeacsv import CsvDataFrame
 
 
 @pytest.fixture

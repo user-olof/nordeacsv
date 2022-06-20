@@ -13,7 +13,6 @@ import errno
 import importlib.abc
 import os
 import re
-import sys
 from abc import ABC
 from typing import IO, Iterator
 from contextlib import contextmanager
