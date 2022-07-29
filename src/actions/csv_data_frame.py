@@ -18,7 +18,6 @@ class CsvDataFrame:
         # maybe this can be moved to a later stage?
         return CsvDataFrame(header, content, datatypes)
 
-
     def group_by_header(self, key_name, /):
         key_index = self.headers.index(key_name)
         sorted_by_header = sorted(self.content, key=lambda x: x[key_index])

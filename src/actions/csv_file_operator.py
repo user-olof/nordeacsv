@@ -101,9 +101,9 @@ class CsvFileOperator:
             raise ex
 
         with f:
-            if type(self.frame.output.datatypes) is list:
-                if len(self.frame.output.datatypes) > 0:
-                    tmp = ','.join(str(e) for e in self.frame.output.datatypes)
+            if type(self.frame.output.headers) is list:
+                if len(self.frame.output.headers) > 0:
+                    tmp = ','.join(str(e) for e in self.frame.output.headers)
                     f.write(tmp + '\n')
             if type(self.frame.output.content) is list:
                 for line in self.frame.output.content:

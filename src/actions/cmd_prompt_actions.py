@@ -24,15 +24,16 @@ except ImportError:
     import importlib_resources as pkg_resources
 
 
-class Resource:
+class Resource(BaseException):
     @classmethod
-    def read(cls, path):
+    def read(cls, file):
         try:
             # validate path
-            os.stat(path)
-            txt = pkg_resources.read_text(resources, path, encoding='utf-8')
-            return txt
-        except FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), path) as ex:
+            # os.stat(path)
+            txt = pkg_resources.read_text(package=resources, resource=file, encoding='utf-8')
+            lines = txt.splitlines()
+            return lines
+        except FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), file) as ex:
             print(ex)
 
     @classmethod
@@ -155,7 +156,7 @@ class DataTypeStorage:
             print(ex)
 
 
-def get_resource_reading(resource: str, storage: DataTypeStorage, path_to_resources: str = None):
+def get_resource_reading(resource: str, storage: DataTypeStorage):
     """
     :param resource: file name
     :type resource: str
@@ -170,27 +171,27 @@ def get_resource_reading(resource: str, storage: DataTypeStorage, path_to_resour
     #     raise ReaderException
 
     # with reader.readable_file(resource) as f:
-    with Resource.read(path_to_resources) as f:
-        lines = f.readlines()
-        i = 0
-        while i < len(lines):
-            if "---" in lines[i]:
+    lines = Resource.read(resource)
+    # lines = f.readlines()
+    i = 0
+    while i < len(lines):
+        if "---" in lines[i]:
+            i += 1
+            if "# NAME:" in lines[i]:
+                # create new unit
                 i += 1
-                if "# NAME:" in lines[i]:
-                    # create new unit
+                name = lines[i].replace('# ', '').replace('\n', '')
+                unit = storage.create_unit_from_csv_name(name)
+                i += 1
+                if "# HEADERS:" in lines[i]:
                     i += 1
-                    name = lines[i].replace('# ', '').replace('\n', '')
-                    unit = storage.create_unit_from_csv_name(name)
-                    i += 1
-                    if "# HEADERS:" in lines[i]:
+                    while i < len(lines) and re.search('\\w+:\\w+', lines[i], flags=re.IGNORECASE) is not None:
+                        cleaned_data = lines[i].replace('# ', '').replace('\n', '')
+                        header, datatype = cleaned_data.split(':')
+                        unit.add(header, datatype)
                         i += 1
-                        while i < len(lines) and re.search('\\w+:\\w+', lines[i], flags=re.IGNORECASE) is not None:
-                            cleaned_data = lines[i].replace('# ', '').replace('\n', '')
-                            header, datatype = cleaned_data.split(':')
-                            unit.add(header, datatype)
-                            i += 1
-            else:
-                i += 1
+        else:
+            i += 1
 
 
 class CommandPromptActionsException(Exception):
@@ -219,7 +220,7 @@ class CommandPromptActions:
 
     def write_to_resource_file(self, header: str, datatype: str):
         # open the file in append mode to begin writing at EOF
-        text = header.join(':').join(datatype).join('\n')
+        text = header + ':' + datatype + '\n'
         Resource.write(self.file, text, 'a')
 
         # writer = Reader.create('a')
@@ -241,7 +242,7 @@ class CommandPromptActions:
         i = 2
         while 0 < i:
             if i == 2:
-                print("No datatypes were found in the configuration file. /"
+                print("No datatypes were found in the configuration file. "
                       "Would you like to set a new configuration for this .csv? (Y/N)")
                 res = input()
 

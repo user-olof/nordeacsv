@@ -13,3 +13,15 @@
 # col1:str
 # col2:float
 # col3:int
+
+
+
+
+
+col1:str
+col1:str
+col2:str
+col3:float
+col1:str
+col2:str
+col3:str
