@@ -141,7 +141,7 @@ def test_write_output_to_csv(csvfileoperator, resources_test_write_csv):
 
 def test_write_output_to_csv_2(csvfileoperator, resources_test_write_csv):
     # csv_file = r"C:\Users\Olof\PycharmProjects\NordeaCsv\test_nordeacsv\test_write.csv"
-    csvfileoperator.frame.output.headers = ["header1", "header2"]
+    csvfileoperator.frame.output.datatypes = ["header1", "header2"]
     csvfileoperator.frame.output.content = [["xxx", "aaa"], ["yyy", "bbb"]]
     csvfileoperator.write_output_to_csv(resources_test_write_csv)
     assert os.path.exists(resources_test_write_csv)
@@ -150,7 +150,7 @@ def test_write_output_to_csv_2(csvfileoperator, resources_test_write_csv):
 # def test_to_cash_flow_csv(headers, content, datatypes):
 def test_to_cash_flow_csv(csvfileoperator, content, headers, datatypes, resources_cash_flow_csv):
     csvfileoperator.frame.content = content
-    csvfileoperator.frame.headers = headers
+    csvfileoperator.frame.datatypes = headers
     csvfileoperator.frame.datatypes = datatypes
     # designated_file = r"C:\Users\Olof\PycharmProjects\NordeaCsv\test_nordeacsv\cash_flow.csv"
     csvfileoperator.to_cash_flow_csv("Namn", resources_cash_flow_csv)

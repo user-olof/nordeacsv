@@ -16,63 +16,89 @@ import re
 from abc import ABC
 from typing import IO, Iterator
 from contextlib import contextmanager
+import resources
+
+try:
+    import importlib.resources as pkg_resources
+except ImportError:
+    import importlib_resources as pkg_resources
 
 
-class ReaderException(Exception):
-    """ Exception when reading a resource file """
-
-
-class Reader(importlib.abc.ResourceReader, ABC):
-
-    def __init__(self, mode: str):
-        self.file: IO = None
-        self.mode = mode
-
-
+class Resource:
     @classmethod
-    def create(cls, mode: str):
-        return Reader(mode)
-
-    def open_resource(self, resource: str) -> IO[bytes]:
+    def read(cls, path):
         try:
-            # get full path
-            path = self.resource_path(resource)
             # validate path
             os.stat(path)
-            # open file in read mode
-            self.file = open(path, self.mode)
-            return self.file
+            txt = pkg_resources.read_text(resources, path, encoding='utf-8')
+            return txt
         except FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), path) as ex:
             print(ex)
-        except IOError as ex:
-            print(ex)
-        except Exception as e:
-            print(e)
 
-    def resource_path(self, resource: str) -> str:
-        path = os.path.join(os.getcwd(), r"resources", resource)
-        return path
-
-    def is_resource(self, name: str) -> bool:
-        if name == "header.txt":
-            return True
-        else:
-            return False
-
-    def contents(self) -> Iterator[str]:
-        return "Not implemented"
-
-    # reads all the information in the reader.txt file
-    # get resource path
-    @contextmanager
-    def readable_file(self, resource: str) -> IO:
-        file = self.open_resource(resource)
+    @classmethod
+    def write(cls, path, text, mode):
         try:
-            yield file
-        finally:
-            file.close()
+            # validate path
+            os.stat(path)
+            # write to resource file
+            with open(path, encoding='utf-8', mode=mode) as f:
+                f.write(text)
+        except FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), path) as ex:
+            print(ex)
 
-    # return files(module).joinpath(name).read_text()
+
+# class ReaderException(Exception):
+#     """ Exception when reading a resource file """
+
+
+# class Reader(importlib.abc.TraversableResources, ABC):
+#
+#     def __init__(self, mode: str):
+#         self.file: IO = None
+#         self.mode = mode
+#
+#     @classmethod
+#     def create(cls, mode: str):
+#         return Reader(mode)
+#
+#     def open_resource(self, resource: str) -> IO[bytes]:
+#         try:
+#             # get full path
+#             path = self.resource_path(resource)
+#             # validate path
+#             os.stat(path)
+#             # open file in read mode
+#             self.file = open(path, self.mode)
+#             return self.file
+#         except FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), path) as ex:
+#             print(ex)
+#         except IOError as ex:
+#             print(ex)
+#         except Exception as e:
+#             print(e)
+#
+#     def resource_path(self, resource: str) -> str:
+#         path = os.path.join(os.getcwd(), r"resources", resource)
+#         return path
+#
+#     def is_resource(self, name: str) -> bool:
+#         if name == "header.txt":
+#             return True
+#         else:
+#             return False
+#
+#     def contents(self) -> Iterator[str]:
+#         return "Not implemented"
+#
+#     # reads all the information in the reader.txt file
+#     # get resource path
+#     @contextmanager
+#     def readable_file(self, resource: str) -> IO:
+#         file = self.open_resource(resource)
+#         try:
+#             yield file
+#         finally:
+#             file.close()
 
 
 class StorageUnit:
@@ -119,12 +145,6 @@ class DataTypeStorage:
         except DataTypeStorageException as ex:
             print(ex)
 
-    # def get_unit_by_csv_name(self, name):
-    #     for unit in self.list_of_units:
-    #         if unit.name is name:
-    #             return unit
-    #     raise DataTypeStorageException
-
     @classmethod
     def find_unit_by_csv_name(cls, name):
         try:
@@ -145,11 +165,12 @@ def get_resource_reading(resource: str, storage: DataTypeStorage, path_to_resour
     :type path_to_resources: str
     :return all text in file
     """
-    reader = Reader.create('r')
-    if reader.is_resource(resource) is False and path_to_resources is None:
-        raise ReaderException
+    # reader = Reader.create('r')
+    # if reader.is_resource(resource) is False and path_to_resources is None:
+    #     raise ReaderException
 
-    with reader.readable_file(resource) as f:
+    # with reader.readable_file(resource) as f:
+    with Resource.read(path_to_resources) as f:
         lines = f.readlines()
         i = 0
         while i < len(lines):
@@ -175,14 +196,12 @@ def get_resource_reading(resource: str, storage: DataTypeStorage, path_to_resour
 class CommandPromptActionsException(Exception):
     """ Exception raised when trying to map headers and datatypes """
 
+
 class CommandPromptActions:
-    # parser = argparse.ArgumentParser(description="Convert CSV files from www.nordea.com into new standard CSV format")
-    # parser.add_argument('-f', '--file', required=True, type=str, help='Path to input file')
-    # args = parser.parse_args()
     def __init__(self, resource):
         self.parser = None
         self.file = None
-        self.headers = {}
+        self.datatypes = {}
         self.resource = resource
 
     @classmethod
@@ -200,41 +219,62 @@ class CommandPromptActions:
 
     def write_to_resource_file(self, header: str, datatype: str):
         # open the file in append mode to begin writing at EOF
-        writer = Reader.create('a')
-        with writer.readable_file(self.resource) as w:
-            w.write(header.join(':').join(datatype).join('\n'))
+        text = header.join(':').join(datatype).join('\n')
+        Resource.write(self.file, text, 'a')
 
-    def find_headers(self):
+        # writer = Reader.create('a')
+        # with writer.readable_file(self.resource) as w:
+        #     w.write(header.join(':').join(datatype).join('\n'))
+
+    def find_headers_in_csv(self) -> {int, list}:
         with open(self.file) as f:
             line = f.read()
 
         splitlines = line.splitlines()
         if len(splitlines) > 0:
             res = splitlines[0].split(';')
-            return res
+            n = len(res)
+            return n, res
         return None
 
-    def set_datatypes(self) -> dict:
+    def define_datatypes(self, column_names):
+        i = 2
+        while 0 < i:
+            if i == 2:
+                print("No datatypes were found in the configuration file. /"
+                      "Would you like to set a new configuration for this .csv? (Y/N)")
+                res = input()
 
-        __headers__ = self.find_headers()
-        if __headers__ is None:
-            raise CommandPromptActionsException("No datatypes has been found")
-
-        for h in __headers__:
-            tmp = input(h.join(': str? '))
-            if tmp == "":
-                self.headers[h] = "str"
-            elif tmp in ["float", "int", "str"]:
-                self.headers[h] = tmp
             else:
-                raise CommandPromptActionsException("Datatype does not exist")
+                res = input("Would you like to set a new configuration for this .csv? (Y/N)")
+            if res == 'Y' or res == 'y':
+                for h in column_names:
+                    print(h + ': str? ')
+                    tmp = input()
+                    if tmp == "":
+                        self.datatypes[h] = "str"
+                    elif tmp in ["float", "int", "str"]:
+                        self.datatypes[h] = tmp
+                    else:
+                        raise CommandPromptActionsException("Datatype does not exist")
+                    self.write_to_resource_file(h, self.datatypes[h])
+                break
+            if res == 'N' or res == 'y':
+                break
+            else:
+                print("Wrong key. You have another {i} attempts.", i)
+            i -= 1
 
-            self.write_to_resource_file(h, self.headers[h])
+    def set_datatypes(self) -> dict:
+        (size, column_names) = self.find_headers_in_csv()
+        if column_names is None:
+            column_names = ["col" + str(i) for i in range(size)]
+        self.define_datatypes(column_names)
 
-        return self.headers
+        return self.datatypes
 
     def get_datatypes(self) -> dict:
-        return self.headers
+        return self.datatypes
 
     def get_filepath(self) -> str:
         return self.file
@@ -242,17 +282,6 @@ class CommandPromptActions:
     def print(self, string: str, /):
         print(string)
 
-    # def file_status(self, status: str):
-    #     if status == :
-    #         print("File information is loaded into the CsvDataFrame")
-    #     elif status == "GENERATED":
-    #         print("New file has been generated in the root folder")
-    #     elif status == "NOT FOUND":
-    #         print("No new file has been generated")
-    #     elif status == "OPEN":
-    #         print("Source file is open. Please close and try again")
-
     def stop(self):
         input("New file has been generated in the root folder. Press Enter to exit ...")
         # Successful termination
-        # sys.exit(0)

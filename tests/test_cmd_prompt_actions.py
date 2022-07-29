@@ -38,7 +38,7 @@ def test_readable_file(resource, reader):
 # This test checks if there are two identical file names. See header.txt
 def test_get_resource_reading(resource, storage):
     try:
-        fullpath = os.path.join(os.getcwd(), "resources", "header.txt")
+        fullpath = os.path.join(os.getcwd(), "resources", resource)
         get_resource_reading(resource, storage, fullpath)
     except DataTypeStorageException as ex:
         print(ex)
@@ -46,11 +46,18 @@ def test_get_resource_reading(resource, storage):
     assert unit.name == "test.csv" and len(storage.list_of_units) == 1
 
 
-def test_find_headers():
+def test_find_headers(resource):
     cwd = os.getcwd()
     fullpath = os.path.join(cwd, 'resources', 'test.csv')
     # fullpath = r'C:\Users\Olof\PycharmProjects\NordeaCsv\nordea.csv'
-    actions = CommandPromptActions.create("header.txt")
+    actions = CommandPromptActions.create(resource)
     actions.file = fullpath
-    headers = actions.find_headers()
-    assert len(headers) > 0
+    (size, headers) = actions.find_headers_in_csv()
+    assert len(headers) > 0 and size > 0
+
+
+def test_define_datatypes(resource):
+    column_names = ["col1", "col2", "col3"]
+    actions = CommandPromptActions.create(resource)
+    datatypes = actions.define_datatypes(column_names)
+    assert len(datatypes) == 3
